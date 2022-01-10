@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
+
 
 @Data
 @NoArgsConstructor
@@ -14,9 +16,9 @@ import lombok.NoArgsConstructor;
 public class VoteCreateRequestDTO {
 
     private VoteType vote;
-
+    @NotNull(message = "The session id cannot be null!")
     private Long sessionId;
-
+    @NotNull(message = "The Affiliated's CPF cannot be blank")
     private String affiliatedCpf;
 
 }

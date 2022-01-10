@@ -4,6 +4,7 @@ import br.com.southsystem.cooperative.domain.Session;
 import br.com.southsystem.cooperative.domain.Vote;
 import br.com.southsystem.cooperative.domain.enumeration.VoteType;
 import br.com.southsystem.cooperative.exception.BadRequestAlertException;
+import br.com.southsystem.cooperative.exception.InvalidParameterException;
 import br.com.southsystem.cooperative.repository.SessionRepository;
 import br.com.southsystem.cooperative.service.SessionService;
 import br.com.southsystem.cooperative.service.SubjectService;
@@ -37,12 +38,12 @@ public class SessionServiceImpl implements SessionService {
 
     private final SubjectService subjectService;
 
-    private final KfkaProducerService kfkaProducerService;
+    private final KafkaProducerService kfkaProducerService;
 
     @Value("${mensageria.topic.name}")
     private String topicName;
 
-    public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper sessionMapper, SubjectService subjectService, KfkaProducerService kfkaProducerService) {
+    public SessionServiceImpl(SessionRepository sessionRepository, SessionMapper sessionMapper, SubjectService subjectService, KafkaProducerService kfkaProducerService) {
         this.sessionRepository = sessionRepository;
         this.sessionMapper = sessionMapper;
         this.subjectService = subjectService;
@@ -69,8 +70,9 @@ public class SessionServiceImpl implements SessionService {
 
         SessionDTO sessionDTO = sessionMapper.toDto(sessionInitRequestDTO);
         sessionDTO.setStartDateTime(LocalDateTime.now());
+        validateEndDateTime(sessionDTO);
         Session session = sessionMapper.toEntity(sessionDTO);
-        session.validateEndDateTime();
+
         session = sessionRepository.save(session);
         return sessionMapper.toDto(session);
     }
@@ -122,7 +124,7 @@ public class SessionServiceImpl implements SessionService {
     @Transactional(readOnly = true)
     public void isOpen(Long id) {
         SessionDTO sessionDTO = findOne(id).get();
-        if (!sessionDTO.isOpen()) {
+        if (!isOpen(sessionDTO)) {
             throw new BadRequestAlertException("This session is closed!");
         }
     }
@@ -167,6 +169,31 @@ public class SessionServiceImpl implements SessionService {
 
             sessionRepository.save(session);
         }
+    }
+
+    @Override
+    public void setDefaultValueToEndDateTime(SessionDTO sessionDTO) {
+        if (sessionDTO.getStartDateTime() == null) {
+            sessionDTO.setStartDateTime(LocalDateTime.now());
+        }
+        sessionDTO.setEndDateTime(sessionDTO.getStartDateTime().plusMinutes(1));
+    }
+
+    @Override
+    public void validateEndDateTime(SessionDTO sessionDTO) {
+        if (sessionDTO.getEndDateTime() == null) {
+            this.setDefaultValueToEndDateTime(sessionDTO);
+        } else if (LocalDateTime.now().isAfter(sessionDTO.getEndDateTime())) {
+            throw new InvalidParameterException("End date must be greater than current");
+        }
+    }
+
+    @Override
+    public boolean isOpen(SessionDTO sessionDTO) {
+        LocalDateTime now = LocalDateTime.now();
+        if (sessionDTO.getEndDateTime().isAfter(now)) {
+            return true;
+        } else return false;
     }
 }
 

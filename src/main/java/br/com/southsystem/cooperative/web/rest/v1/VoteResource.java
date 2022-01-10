@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
 
 
 /**
@@ -57,15 +58,9 @@ public class VoteResource {
             @ApiResponse(code = 404, message = "Cpf is invalid"),
             @ApiResponse(code = 400, message = "Cpf is unable to vote"),
     })
-    public ResponseEntity<VoteDTO> vote(@RequestBody VoteCreateRequestDTO voteCreateRequestDTO) {
+    public ResponseEntity<VoteDTO> vote(@Valid @RequestBody VoteCreateRequestDTO voteCreateRequestDTO) {
         log.debug("REST request to save Vote : {}", voteCreateRequestDTO);
         try {
-            if (voteCreateRequestDTO.getAffiliatedCpf() == null || voteCreateRequestDTO.getAffiliatedCpf().trim().equals("")) {
-                throw new BadRequestAlertException("The Affiliated's CPF cannot be blank");
-            }
-            if (voteCreateRequestDTO.getSessionId() == null) {
-                throw new BadRequestAlertException("The session id cannot be null!");
-            }
             VoteDTO result = voteService.vote(voteCreateRequestDTO);
             return new ResponseEntity<>(result, HttpStatus.CREATED);
         }catch (ConstraintViolationException e) {

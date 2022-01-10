@@ -2,7 +2,6 @@ package br.com.southsystem.cooperative.service.impl;
 
 import br.com.southsystem.cooperative.client.VerifyCPFClient;
 import br.com.southsystem.cooperative.domain.Vote;
-
 import br.com.southsystem.cooperative.exception.BadRequestAlertException;
 import br.com.southsystem.cooperative.exception.CpfNotFoundException;
 import br.com.southsystem.cooperative.exception.CpfUnableToVoteException;
@@ -15,13 +14,8 @@ import br.com.southsystem.cooperative.service.dto.*;
 import br.com.southsystem.cooperative.service.mapper.VoteMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -66,7 +60,7 @@ public class VoteServiceImpl implements VoteService {
 
         SessionDTO sessionDTO = sessionService.findOne(voteCreateRequestDTO.getSessionId())
                 .orElseThrow(() -> new EntityNotFoundException("The Session does not exist!"));
-        if (!sessionDTO.isOpen()) {
+        if (!sessionService.isOpen(sessionDTO)) {
             throw new SessionIsNotOpenException("The session is closed!");
         }
 
@@ -77,14 +71,11 @@ public class VoteServiceImpl implements VoteService {
         if (hasAffiliatedVoteInSessionByAffiliatedCpfAndSessionId(affiliated.getCpf(), voteCreateRequestDTO.getSessionId())) {
             throw new BadRequestAlertException("The affiliated has benn voted in the session!");
         }
-        try {
-            CpfExternalApiResultDTO cpfExternalApiResultDTO = verifyCPFClient.verifyCpfIsAbleToVote(affiliated.getCpf());
 
-            if (cpfExternalApiResultDTO.getStatus().equals(UNABLE_TO_VOTE)) {
-                throw new CpfUnableToVoteException("The CPF is unable to vote.");
-            }
-        } catch (Exception e) {
-            throw new CpfNotFoundException("The CPF is invalid");
+        CpfExternalApiResultDTO cpfExternalApiResultDTO = verifyCPFClient.verifyCpfIsAbleToVote(affiliated.getCpf());
+
+        if (cpfExternalApiResultDTO.getStatus().equals(UNABLE_TO_VOTE)) {
+            throw new CpfUnableToVoteException("The CPF is unable to vote.");
         }
 
 
