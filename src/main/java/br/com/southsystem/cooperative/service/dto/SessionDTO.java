@@ -23,6 +23,5 @@ public class SessionDTO {
 
     private String subjectSubject;
 
-    private boolean open;
 
 }

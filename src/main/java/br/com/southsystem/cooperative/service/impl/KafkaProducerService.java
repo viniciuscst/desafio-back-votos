@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class KfkaProducerService implements MensageriaProducerService {
+public class KafkaProducerService implements MensageriaProducerService {
 
     private final KafkaTemplate<String,String> kafkaTemplate;
 

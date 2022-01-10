@@ -62,25 +62,5 @@ public class Session {
         this.endDateTime = endDateTime;
     }
 
-    private void setDefaultValueToEndDateTime() {
-        if (getStartDateTime() == null) {
-            setStartDateTime(LocalDateTime.now());
-        }
-        this.setEndDateTime(getStartDateTime().plusMinutes(1));
-    }
 
-    public void validateEndDateTime() {
-        if (this.getEndDateTime() == null) {
-            this.setDefaultValueToEndDateTime();
-        } else if (LocalDateTime.now().isAfter(this.getEndDateTime())) {
-            throw new InvalidParameterException("End date must be greater than current");
-        }
-    }
-
-    public boolean isOpen() {
-        LocalDateTime now = LocalDateTime.now();
-        if (this.getEndDateTime().isAfter(now)) {
-            return true;
-        } else return false;
-    }
 }

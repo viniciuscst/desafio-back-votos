@@ -46,4 +46,10 @@ public interface SessionService {
      * This method check closed Sessions and send messages to topic.
      */
     void checkClosedSessionsAndSendMessageToTopic() throws JsonProcessingException;
+
+    void setDefaultValueToEndDateTime(SessionDTO sessionDTO);
+
+    void validateEndDateTime(SessionDTO sessionDTO);
+
+    boolean isOpen(SessionDTO sessionDTO);
 }

@@ -1,7 +1,6 @@
 package br.com.southsystem.cooperative.web.rest.v1;
 
 
-import br.com.southsystem.cooperative.exception.BadRequestAlertException;
 import br.com.southsystem.cooperative.exception.handler.CustomResponseEntityExceptionHandler;
 import br.com.southsystem.cooperative.service.SessionService;
 import br.com.southsystem.cooperative.service.dto.SessionDTO;
@@ -18,8 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 
 /**
@@ -51,14 +50,10 @@ public class SessionResource {
             @ApiResponse(code = 400, message = "A bad request")
 
     })
-    public ResponseEntity<SessionDTO> save(@RequestBody SessionInitRequestDTO sessionInitRequestDTO) {
+    public ResponseEntity<SessionDTO> save(@Valid @RequestBody SessionInitRequestDTO sessionInitRequestDTO) {
         log.debug("REST request to save Session : {}", sessionInitRequestDTO);
         try {
-            if (sessionInitRequestDTO.getSubjectId() == null) {
-                throw new BadRequestAlertException("The Subject id cannot be null!");
-            }
-            SessionDTO result = sessionService.init(sessionInitRequestDTO);
-            return new ResponseEntity<>(result, HttpStatus.CREATED);
+            return new ResponseEntity<>(sessionService.init(sessionInitRequestDTO), HttpStatus.CREATED);
         } catch (ConstraintViolationException e) {
             return CustomResponseEntityExceptionHandler.handle(e);
         } catch (Exception e) {
@@ -99,8 +94,7 @@ public class SessionResource {
     public ResponseEntity<SessionDTO> getSession(@PathVariable Long id) {
         log.debug("REST request to get session : {}", id);
         try {
-            Optional<SessionDTO> sessionDTO = sessionService.findOne(id);
-            return new ResponseEntity(sessionDTO, HttpStatus.OK);
+            return new ResponseEntity(sessionService.findOne(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity(e.getMessage(), HttpStatus.NOT_FOUND);
         }
@@ -121,8 +115,7 @@ public class SessionResource {
     public ResponseEntity<SessionDTO> getSessionBySubjectId(@PathVariable Long id) {
         try {
             log.debug("REST request to get session : {}", id);
-            Optional<SessionDTO> sessionDTO = sessionService.findOneBySubjectId(id);
-            return new ResponseEntity(sessionDTO, HttpStatus.OK);
+            return new ResponseEntity(sessionService.findOneBySubjectId(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity(e.getMessage(), HttpStatus.NOT_FOUND);
         }
