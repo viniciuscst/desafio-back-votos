@@ -1,5 +1,6 @@
 package br.com.southsystem.cooperative.service.impl;
 
+import br.com.southsystem.cooperative.client.VerifyCPFClient;
 import br.com.southsystem.cooperative.domain.Vote;
 
 import br.com.southsystem.cooperative.exception.BadRequestAlertException;
@@ -14,14 +15,13 @@ import br.com.southsystem.cooperative.service.dto.*;
 import br.com.southsystem.cooperative.service.mapper.VoteMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
+
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+
 
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -39,24 +39,19 @@ public class VoteServiceImpl implements VoteService {
 
     private final SessionService sessionService;
 
-    private final WebClient webClient;
+    private final VerifyCPFClient verifyCPFClient;
 
-    @Value("${cooperative.cpfExternalApi.url}")
-    private String cpfExternalApiUrl;
 
     @Value("${cooperative.cpfExternalApi.results.unableToVote}")
     private String UNABLE_TO_VOTE;
 
     public VoteServiceImpl(VoteRepository voteRepository, VoteMapper voteMapper,
-                           AffiliatedService affiliatedService, SessionService sessionService) {
+                           AffiliatedService affiliatedService, SessionService sessionService, VerifyCPFClient verifyCPFClient) {
         this.voteRepository = voteRepository;
         this.voteMapper = voteMapper;
         this.affiliatedService = affiliatedService;
         this.sessionService = sessionService;
-
-        this.webClient = WebClient.builder()
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
+        this.verifyCPFClient = verifyCPFClient;
     }
 
     /**
@@ -82,12 +77,16 @@ public class VoteServiceImpl implements VoteService {
         if (hasAffiliatedVoteInSessionByAffiliatedCpfAndSessionId(affiliated.getCpf(), voteCreateRequestDTO.getSessionId())) {
             throw new BadRequestAlertException("The affiliated has benn voted in the session!");
         }
+        try {
+            CpfExternalApiResultDTO cpfExternalApiResultDTO = verifyCPFClient.verifyCpfIsAbleToVote(affiliated.getCpf());
 
-        CpfExternalApiResultDTO cpfExternalApiResultDTO = verifyCpfIsAbleToVote(affiliated.getCpf()).block();
-
-        if (cpfExternalApiResultDTO.getStatus().equals(UNABLE_TO_VOTE)) {
-            throw new CpfUnableToVoteException("The CPF is unable to vote.");
+            if (cpfExternalApiResultDTO.getStatus().equals(UNABLE_TO_VOTE)) {
+                throw new CpfUnableToVoteException("The CPF is unable to vote.");
+            }
+        } catch (Exception e) {
+            throw new CpfNotFoundException("The CPF is invalid");
         }
+
 
         voteDTO.setAffiliatedId(affiliated.getId());
         Vote vote = voteMapper.toEntity(voteDTO);
@@ -124,17 +123,19 @@ public class VoteServiceImpl implements VoteService {
         return vote != null && vote.isPresent() && !vote.isEmpty() ? true : false;
     }
 
-    /**
-     * Verify if the cpf is able to vote.
-     *
-     * @param cpf
-     */
-    @Override
-    public Mono<CpfExternalApiResultDTO> verifyCpfIsAbleToVote(String cpf) {
-        log.debug("Request to verify cpf is able to vote: {}", cpf);
-        return this.webClient.method(HttpMethod.GET).uri(cpfExternalApiUrl + "/{cpf}", cpf).retrieve()
-                .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(),
-                        response -> Mono.error(new CpfNotFoundException("The CPF is invalid")))
-                .bodyToMono(CpfExternalApiResultDTO.class);
-    }
+//    /**
+//     * Verify if the cpf is able to vote.
+//     *
+//     * @param cpf
+//     */
+//    @Override
+//    public Mono<CpfExternalApiResultDTO> verifyCpfIsAbleToVote(String cpf) {
+//        log.debug("Request to verify cpf is able to vote: {}", cpf);
+//        return this.webClient.method(HttpMethod.GET).uri(cpfExternalApiUrl + "/{cpf}", cpf).retrieve()
+//                .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(),
+//                        response -> Mono.error(new CpfNotFoundException("The CPF is invalid")))
+//                .bodyToMono(CpfExternalApiResultDTO.class);
+//    }
+
+
 }
