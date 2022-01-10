@@ -1,9 +1,8 @@
 package br.com.southsystem.cooperative.service;
 
-import br.com.southsystem.cooperative.service.dto.CpfExternalApiResultDTO;
 import br.com.southsystem.cooperative.service.dto.VoteCreateRequestDTO;
 import br.com.southsystem.cooperative.service.dto.VoteDTO;
-import reactor.core.publisher.Mono;
+
 
 import java.util.Optional;
 
@@ -33,5 +32,4 @@ public interface VoteService {
      */
     boolean hasAffiliatedVoteInSessionByAffiliatedCpfAndSessionId(String cpf, Long sessionId);
 
-    Mono<CpfExternalApiResultDTO> verifyCpfIsAbleToVote(String cpf);
 }
