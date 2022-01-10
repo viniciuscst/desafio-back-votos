@@ -36,7 +36,7 @@ O sistema foi estruturado pelos pacotes:
 - Postgresql para o banco de dados.
 - H2 para o banco de dados de teste para o perfil test.
 - Junit para o desenvolvimento dos testes de unidade.
-- Swagger2 para a documentação da api
+- Swagger para a documentação da api
 - Spring-cloud-starter-openfeign para acesso da api externa para checagem de CPF
 - Kafka e Zookeeper para o desenvolvemento da tarefa de mensageria.
 
